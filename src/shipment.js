@@ -6,6 +6,13 @@ export const SHIPMENT_STATUSES = Object.freeze({
   CANCELED: "canceled",
 });
 
+// CT-02 : seule transition autorisée depuis chaque statut du parcours
+const NEXT_STATUS = Object.freeze({
+  [SHIPMENT_STATUSES.CREATED]: SHIPMENT_STATUSES.PREPARED,
+  [SHIPMENT_STATUSES.PREPARED]: SHIPMENT_STATUSES.IN_TRANSIT,
+  [SHIPMENT_STATUSES.IN_TRANSIT]: SHIPMENT_STATUSES.DELIVERED,
+});
+
 export function createShipment({ reference, recipientEmail, weightKg, zone }) {
   return {
     reference,
@@ -29,6 +36,10 @@ export function advanceShipment(shipment, nextStatus) {
   ];
   if (!possibleStatuses.includes(nextStatus)) {
     throw new Error("Unknown target status");
+  }
+
+  if (!NEXT_STATUS.hasOwnProperty(shipment.status) || NEXT_STATUS[shipment.status] !== nextStatus) {
+    throw new Error("Transition interdite");
   }
 
   return {
