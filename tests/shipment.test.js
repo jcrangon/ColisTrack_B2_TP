@@ -38,3 +38,68 @@ test("une livraison complète conserve son historique", () => {
   }
   assert.deepEqual(shipment.history, ["created", "prepared", "in_transit", "delivered"]);
 });
+
+test("CT-02 : impossible de sauter une étape", () => {
+  const shipment = sample();
+  const before = structuredClone(shipment);
+  assert.throws(() => advanceShipment(shipment, "delivered"), Error);
+  assert.deepEqual(shipment, before);
+});
+
+test("CT-02 : impossible de revenir en arrière", () => {
+  const prepared = advanceShipment(sample(), "prepared");
+  const inTransit = advanceShipment(prepared, "in_transit");
+  const before = structuredClone(inTransit);
+  assert.throws(() => advanceShipment(inTransit, "prepared"), Error);
+  assert.deepEqual(inTransit, before);
+});
+
+test("CT-02 : impossible de répéter une étape", () => {
+  const prepared = advanceShipment(sample(), "prepared");
+  const before = structuredClone(prepared);
+  assert.throws(() => advanceShipment(prepared, "prepared"), Error);
+  assert.deepEqual(prepared, before);
+});
+
+for (const status of ["delivered", "canceled"]) {
+  test(`CT-03 : ${status} bloque toute évolution sans modifier le colis`, () => {
+    let shipment = sample();
+    if (status === "canceled") {
+      shipment = cancelShipment(shipment);
+    } else {
+      for (const step of ["prepared", "in_transit", "delivered"]) {
+        shipment = advanceShipment(shipment, step);
+      }
+    }
+    const before = structuredClone(shipment);
+
+    for (const target of Object.values(SHIPMENT_STATUSES)) {
+      assert.throws(() => advanceShipment(shipment, target), Error);
+      assert.deepEqual(shipment, before);
+    }
+  });
+}
+
+for (const status of Object.values(SHIPMENT_STATUSES)) {
+  test(`CT-04 : annulation depuis ${status}`, () => {
+    let shipment = sample();
+    if (status === "canceled") {
+      shipment = cancelShipment(shipment);
+    } else {
+      for (const step of ["prepared", "in_transit", "delivered"]) {
+        if (shipment.status === status) break;
+        shipment = advanceShipment(shipment, step);
+      }
+    }
+    const before = structuredClone(shipment);
+
+    if (status === "created" || status === "prepared") {
+      const canceled = cancelShipment(shipment);
+      assert.equal(canceled.status, "canceled");
+      assert.deepEqual(canceled.history, [...before.history, "canceled"]);
+    } else {
+      assert.throws(() => cancelShipment(shipment), Error);
+    }
+    assert.deepEqual(shipment, before);
+  });
+}

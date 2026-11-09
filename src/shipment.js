@@ -18,17 +18,17 @@ export function createShipment({ reference, recipientEmail, weightKg, zone }) {
 }
 
 export function advanceShipment(shipment, nextStatus) {
-  if (shipment.status === SHIPMENT_STATUSES.DELIVERED) {
-    throw new Error("A delivered shipment cannot be changed");
+  if (shipment.status === SHIPMENT_STATUSES.DELIVERED || shipment.status === SHIPMENT_STATUSES.CANCELED) {
+    throw new Error("Un colis livré ou annulé ne peut plus évoluer");
   }
 
-  const possibleStatuses = [
-    SHIPMENT_STATUSES.PREPARED,
-    SHIPMENT_STATUSES.IN_TRANSIT,
-    SHIPMENT_STATUSES.DELIVERED,
-  ];
-  if (!possibleStatuses.includes(nextStatus)) {
-    throw new Error("Unknown target status");
+  const nextStatusByStatus = {
+    created: SHIPMENT_STATUSES.PREPARED,
+    prepared: SHIPMENT_STATUSES.IN_TRANSIT,
+    in_transit: SHIPMENT_STATUSES.DELIVERED,
+  };
+  if (nextStatus !== nextStatusByStatus[shipment.status]) {
+    throw new Error("Cette transition n'est pas autorisée");
   }
 
   return {
@@ -39,8 +39,8 @@ export function advanceShipment(shipment, nextStatus) {
 }
 
 export function cancelShipment(shipment) {
-  if (shipment.status === SHIPMENT_STATUSES.DELIVERED) {
-    throw new Error("A delivered shipment cannot be canceled");
+  if (shipment.status !== SHIPMENT_STATUSES.CREATED && shipment.status !== SHIPMENT_STATUSES.PREPARED) {
+    throw new Error("Seul un colis créé ou préparé peut être annulé");
   }
 
   return {

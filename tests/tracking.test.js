@@ -11,3 +11,23 @@ test("un suivi public contient la référence et le statut", () => {
   assert.equal(tracking.reference, "CT-109");
   assert.equal(tracking.status, "created");
 });
+
+test("CT-07 : le suivi contient uniquement les champs publics", () => {
+  const shipment = createShipment({
+    reference: "CT-109", recipientEmail: "personne@example.test", weightKg: 1, zone: "FR",
+  });
+  assert.deepEqual(getPublicTracking(shipment), {
+    reference: "CT-109",
+    status: "created",
+    history: ["created"],
+  });
+});
+
+test("CT-07 : modifier l'historique public ne modifie pas le colis", () => {
+  const shipment = createShipment({
+    reference: "CT-109", recipientEmail: "personne@example.test", weightKg: 1, zone: "FR",
+  });
+  const tracking = getPublicTracking(shipment);
+  tracking.history.push("prepared");
+  assert.deepEqual(shipment.history, ["created"]);
+});
