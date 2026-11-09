@@ -18,17 +18,13 @@ export function createShipment({ reference, recipientEmail, weightKg, zone }) {
 }
 
 export function advanceShipment(shipment, nextStatus) {
-  if (shipment.status === SHIPMENT_STATUSES.DELIVERED) {
-    throw new Error("A delivered shipment cannot be changed");
-  }
-
-  const possibleStatuses = [
-    SHIPMENT_STATUSES.PREPARED,
-    SHIPMENT_STATUSES.IN_TRANSIT,
-    SHIPMENT_STATUSES.DELIVERED,
-  ];
-  if (!possibleStatuses.includes(nextStatus)) {
-    throw new Error("Unknown target status");
+  const nextByStatus = new Map([
+    [SHIPMENT_STATUSES.CREATED, SHIPMENT_STATUSES.PREPARED],
+    [SHIPMENT_STATUSES.PREPARED, SHIPMENT_STATUSES.IN_TRANSIT],
+    [SHIPMENT_STATUSES.IN_TRANSIT, SHIPMENT_STATUSES.DELIVERED],
+  ]);
+  if (!nextByStatus.has(shipment.status) || nextByStatus.get(shipment.status) !== nextStatus) {
+    throw new Error("Forbidden shipment transition");
   }
 
   return {
@@ -39,8 +35,8 @@ export function advanceShipment(shipment, nextStatus) {
 }
 
 export function cancelShipment(shipment) {
-  if (shipment.status === SHIPMENT_STATUSES.DELIVERED) {
-    throw new Error("A delivered shipment cannot be canceled");
+  if (shipment.status !== SHIPMENT_STATUSES.CREATED && shipment.status !== SHIPMENT_STATUSES.PREPARED) {
+    throw new Error("Only created or prepared shipments can be canceled");
   }
 
   return {

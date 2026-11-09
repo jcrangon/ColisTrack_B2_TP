@@ -11,3 +11,14 @@ test("un suivi public contient la référence et le statut", () => {
   assert.equal(tracking.reference, "CT-109");
   assert.equal(tracking.status, "created");
 });
+
+test("suivi public : clés exactes et historique indépendant", () => {
+  const shipment = createShipment({
+    reference: "CT-110", recipientEmail: "prive@example.test", weightKg: 3, zone: "EU",
+  });
+  const tracking = getPublicTracking(shipment);
+  assert.deepEqual(Object.keys(tracking).sort(), ["history", "reference", "status"]);
+  assert.deepEqual(tracking.history, shipment.history);
+  tracking.history.push("prepared");
+  assert.deepEqual(shipment.history, ["created"]);
+});

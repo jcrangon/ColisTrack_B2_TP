@@ -18,7 +18,6 @@ final class TrackingPresenter
         return [
             'reference' => $shipment['reference'],
             'statusLabel' => $labels[$shipment['status']] ?? 'Inconnu',
-            'recipientEmail' => $shipment['recipientEmail'],
         ];
     }
 }

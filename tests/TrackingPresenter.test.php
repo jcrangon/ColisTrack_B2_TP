@@ -23,4 +23,8 @@ $card = (new TrackingPresenter())->publicCard($shipment);
 verify($card['reference'], 'CT-109', 'reference');
 verify($card['statusLabel'], 'En transit', 'libelle');
 verify((new TrackingPresenter())->publicCard([...$shipment, 'status' => 'unknown'])['statusLabel'], 'Inconnu', 'statut inconnu');
+verify(array_keys($card), ['reference', 'statusLabel'], 'cles publiques exactes');
+foreach (['created' => 'Créé', 'prepared' => 'Préparé', 'in_transit' => 'En transit', 'delivered' => 'Livré', 'canceled' => 'Annulé'] as $status => $label) {
+    verify((new TrackingPresenter())->publicCard([...$shipment, 'status' => $status])['statusLabel'], $label, 'libelle ' . $status);
+}
 echo "PHP : $checked vérifications conformes\n";
