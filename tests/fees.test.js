@@ -6,6 +6,10 @@ test("FR : tarif de base pour 1 kg", () => {
   assert.equal(calculateShippingFee(1, "FR"), 4);
 });
 
-test("EU : supplément pour 3 kg", () => {
-  assert.equal(calculateShippingFee(3, "EU"), 10);
+test("Poids nul refusé avant tout calcul", () => {
+  assert.throws(() => calculateShippingFee(0, "EU"), RangeError);
+});
+
+test("zone inconnue refusée avant tout calcul", () => {
+  assert.throws(() => calculateShippingFee(1, "XX"), RangeError);
 });

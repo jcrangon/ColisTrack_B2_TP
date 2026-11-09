@@ -38,3 +38,40 @@ test("une livraison complète conserve son historique", () => {
   }
   assert.deepEqual(shipment.history, ["created", "prepared", "in_transit", "delivered"]);
 });
+
+
+function makeShipment() {
+  return createShipment({ reference: "R1", recipientEmail: "a@b.fr", weightKg: 1, zone: "FR" });
+}
+
+test("CT-02 : saut, retour et répétition sont refusés", () => {
+  const created = makeShipment();
+  const prepared = advanceShipment(created, "prepared");
+  const inTransit = advanceShipment(prepared, "in_transit");
+
+  assert.throws(() => advanceShipment(created, "in_transit"), Error);
+  assert.throws(() => advanceShipment(created, "delivered"), Error);
+  assert.throws(() => advanceShipment(prepared, "created"), Error);
+  assert.throws(() => advanceShipment(prepared, "prepared"), Error);
+  assert.throws(() => advanceShipment(inTransit, "prepared"), Error);
+});
+
+test("CT-03 : delivered et canceled sont terminaux", () => {
+  const created = makeShipment();
+  const inTransit = advanceShipment(advanceShipment(created, "prepared"), "in_transit");
+  const delivered = advanceShipment(inTransit, "delivered");
+  const canceled = cancelShipment(created);
+
+  for (const target of ["prepared", "in_transit", "delivered", "canceled"]) {
+    assert.throws(() => advanceShipment(delivered, target), Error);
+    assert.throws(() => advanceShipment(canceled, target), Error);
+  }
+});
+
+test("CT-03 : une transition refusée ne modifie pas l'objet fourni", () => {
+  const prepared = advanceShipment(makeShipment(), "prepared");
+  const before = structuredClone(prepared);
+
+  assert.throws(() => advanceShipment(prepared, "delivered"), Error);
+  assert.deepEqual(prepared, before);
+});

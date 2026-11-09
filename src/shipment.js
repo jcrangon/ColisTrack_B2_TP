@@ -17,18 +17,19 @@ export function createShipment({ reference, recipientEmail, weightKg, zone }) {
   };
 }
 
-export function advanceShipment(shipment, nextStatus) {
-  if (shipment.status === SHIPMENT_STATUSES.DELIVERED) {
-    throw new Error("A delivered shipment cannot be changed");
-  }
+const NEXT_STATUS = Object.freeze({
+  [SHIPMENT_STATUSES.CREATED]: SHIPMENT_STATUSES.PREPARED,
+  [SHIPMENT_STATUSES.PREPARED]: SHIPMENT_STATUSES.IN_TRANSIT,
+  [SHIPMENT_STATUSES.IN_TRANSIT]: SHIPMENT_STATUSES.DELIVERED,
+});
 
-  const possibleStatuses = [
-    SHIPMENT_STATUSES.PREPARED,
-    SHIPMENT_STATUSES.IN_TRANSIT,
-    SHIPMENT_STATUSES.DELIVERED,
-  ];
-  if (!possibleStatuses.includes(nextStatus)) {
-    throw new Error("Unknown target status");
+export function advanceShipment(shipment, nextStatus) {
+  const isAllowed =
+    Object.hasOwn(NEXT_STATUS, shipment.status) &&
+    NEXT_STATUS[shipment.status] === nextStatus;
+
+  if (!isAllowed) {
+    throw new Error(`Transition not allowed: ${shipment.status} -> ${nextStatus}`);
   }
 
   return {
@@ -36,6 +37,7 @@ export function advanceShipment(shipment, nextStatus) {
     status: nextStatus,
     history: [...shipment.history, nextStatus],
   };
+
 }
 
 export function cancelShipment(shipment) {
